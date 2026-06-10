@@ -1,0 +1,104 @@
+kafka:
+  brokers:
+    - "localhost:19092"
+  topic: "ecommerce-events"
+  batch_size: 100
+  batch_timeout: "1s"
+  compression: "snappy"
+
+state_machine:
+  transitions:
+    - from: "landing"
+      to: "search"
+      probability: 0.8
+    - from: "search"
+      to: "product_view"
+      probability: 0.6
+    - from: "product_view"
+      to: "add_to_cart"
+      probability: 0.3
+    - from: "product_view"
+      to: "search"
+      probability: 0.3
+    - from: "add_to_cart"
+      to: "checkout"
+      probability: 0.5
+    - from: "add_to_cart"
+      to: "product_view"
+      probability: 0.3
+    - from: "checkout"
+      to: "purchase"
+      probability: 0.7
+    - from: "checkout"
+      to: "add_to_cart"
+      probability: 0.2
+
+simulator:
+  seed: 42
+  concurrent_users: 20
+  events_per_second: 25
+  session_duration: "60s"
+  sinks:
+    - "stdout"
+    - "file"
+  output_file: "/var/log/sim/events.ndjson"
+  metrics_addr: ":8080"
+
+products:
+  - id: "prod-001"
+    name: "Wireless Headphones"
+    category: "electronics"
+    price: 79.99
+  - id: "prod-002"
+    name: "Running Shoes"
+    category: "sports"
+    price: 129.99
+  - id: "prod-003"
+    name: "Coffee Maker"
+    category: "home"
+    price: 49.99
+  - id: "prod-004"
+    name: "Yoga Mat"
+    category: "sports"
+    price: 29.99
+  - id: "prod-005"
+    name: "USB-C Hub"
+    category: "electronics"
+    price: 34.99
+  - id: "prod-006"
+    name: "Desk Lamp"
+    category: "home"
+    price: 45.00
+  - id: "prod-007"
+    name: "Backpack"
+    category: "accessories"
+    price: 89.99
+  - id: "prod-008"
+    name: "Sunglasses"
+    category: "accessories"
+    price: 159.99
+  - id: "prod-009"
+    name: "Bluetooth Speaker"
+    category: "electronics"
+    price: 39.99
+  - id: "prod-010"
+    name: "Water Bottle"
+    category: "sports"
+    price: 19.99
+
+search_queries:
+  - "wireless headphones"
+  - "running shoes"
+  - "coffee maker"
+  - "yoga mat"
+  - "usb hub"
+  - "desk lamp"
+  - "backpack"
+  - "sunglasses"
+  - "bluetooth speaker"
+  - "water bottle"
+  - "laptop accessories"
+  - "fitness equipment"
+  - "home office"
+  - "gifts under $50"
+  - "best sellers"

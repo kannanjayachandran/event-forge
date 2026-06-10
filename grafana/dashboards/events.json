@@ -1,0 +1,176 @@
+{
+  "title": "E-Commerce Event Stream",
+  "version": 2,
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Events per Second",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(sim_events_produced_total[1m]))",
+          "legendFormat": "total",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(sim_events_produced_total[1m])",
+          "legendFormat": "{{event_type}}",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "eps",
+          "custom": { "showPoints": "never" }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Active Users",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "targets": [
+        { "expr": "sim_active_users", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "none", "color": { "mode": "continuous-GrYlRd" } }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Sessions Created (/s)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+      "targets": [
+        { "expr": "rate(sim_sessions_created_total[1m])", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "cps", "color": { "mode": "continuous-BlPu" } }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Total Events (5m)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 0 },
+      "targets": [
+        { "expr": "sum(increase(sim_events_produced_total[5m]))", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "none", "color": { "mode": "continuous-GrYlRd" } }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Events by Type (5m)",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 8, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "expr": "topk(10, sum by(event_type) (increase(sim_events_produced_total[5m])))",
+          "legendFormat": "{{event_type}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "none", "color": { "mode": "palette-classic" } }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Event Duration (p50/p95/p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum by(le) (rate(sim_event_duration_seconds_bucket[1m])))",
+          "legendFormat": "p50", "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(sim_event_duration_seconds_bucket[1m])))",
+          "legendFormat": "p95", "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by(le) (rate(sim_event_duration_seconds_bucket[1m])))",
+          "legendFormat": "p99", "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "showPoints": "never" } }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Event Rate by Type",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "rate(sim_events_produced_total[1m])",
+          "legendFormat": "{{event_type}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "eps", "custom": { "showPoints": "never" } }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Kafka Batches per Second",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "rate(sim_kafka_batches_sent_total[1m])",
+          "legendFormat": "batches/s",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ops", "custom": { "showPoints": "never" } }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Avg Batch Size",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 16 },
+      "targets": [
+        {
+          "expr": "rate(sim_kafka_messages_sent_total[1m]) / rate(sim_kafka_batches_sent_total[1m])",
+          "legendFormat": "msgs/batch",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "none", "custom": { "showPoints": "never" } }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Total Messages / Batches",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 16 },
+      "targets": [
+        {
+          "expr": "increase(sim_kafka_messages_sent_total[1m])",
+          "legendFormat": "messages", "refId": "A"
+        },
+        {
+          "expr": "increase(sim_kafka_batches_sent_total[1m])",
+          "legendFormat": "batches", "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "none", "custom": { "showPoints": "never" } }
+      }
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+services:
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.18
+    command:
+      - redpanda
+      - start
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://redpanda:9092,external://localhost:19092
+      - --pandaproxy-addr internal://0.0.0.0:8082,external://0.0.0.0:18082
+      - --advertise-pandaproxy-addr internal://redpanda:8082,external://localhost:18082
+      - --schema-registry-addr internal://0.0.0.0:8081,external://0.0.0.0:18081
+      - --rpc-addr redpanda:33145
+      - --advertise-rpc-addr redpanda:33145
+      - --mode dev-container
+      - --smp 1
+      - --set redpanda.auto_create_topics_enabled=true
+      - --default-log-level=warn
+    ports:
+      - "19092:19092"
+      - "18082:18082"
+      - "18081:18081"
+    healthcheck:
+      test: ["CMD-SHELL", "rpk cluster health | grep -E 'Healthy|Degraded'"]
+      interval: 10s
+      timeout: 3s
+      retries: 15
+      start_period: 30s
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - simulator
+
+  simulator:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    environment:
+      - SIM_KAFKA_BROKERS=redpanda:9092
+      - SIM_KAFKA_TOPIC=ecommerce-events
+      - SIM_SIMULATOR_SEED=42
+      - SIM_SIMULATOR_CONCURRENT_USERS=10
+      - SIM_SIMULATOR_EVENTS_PER_SECOND=5
+      - SIM_SIMULATOR_SESSION_DURATION=60s
+      - SIM_SIMULATOR_SINKS=file
+      - SIM_SIMULATOR_OUTPUT_FILE=/var/log/sim/events.ndjson
+      - SIM_SIMULATOR_METRICS_ADDR=:8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - sim-logs:/var/log/sim
+
+  grafana:
+    image: grafana/grafana:11.0.0
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      - prometheus
+
+volumes:
+  sim-logs:

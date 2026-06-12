@@ -3,46 +3,52 @@ kafka:
     - "localhost:19092"
   topic: "ecommerce-events"
   batch_size: 100
-  batch_timeout: "1s"
+  batch_timeout: "500ms"
   compression: "snappy"
 
 state_machine:
   transitions:
     - from: "landing"
       to: "search"
-      probability: 0.8
+      probability: 0.60
     - from: "search"
       to: "product_view"
-      probability: 0.6
+      probability: 0.25
     - from: "product_view"
       to: "add_to_cart"
-      probability: 0.3
+      probability: 0.10
     - from: "product_view"
       to: "search"
-      probability: 0.3
+      probability: 0.30
     - from: "add_to_cart"
       to: "checkout"
-      probability: 0.5
+      probability: 0.50
     - from: "add_to_cart"
       to: "product_view"
-      probability: 0.3
+      probability: 0.30
     - from: "checkout"
       to: "purchase"
-      probability: 0.7
+      probability: 0.60
     - from: "checkout"
       to: "add_to_cart"
       probability: 0.2
 
 simulator:
   seed: 42
-  concurrent_users: 20
-  events_per_second: 25
+  concurrent_users: 250
+  events_per_second: 800
   session_duration: "60s"
   sinks:
     - "stdout"
     - "file"
   output_file: "/var/log/sim/events.ndjson"
   metrics_addr: ":8080"
+  timing:
+    distribution: "exponential"
+    alpha: 0.04
+    mu: 0.0
+    sigma: 1.0
+
 
 products:
   - id: "prod-001"
@@ -85,6 +91,206 @@ products:
     name: "Water Bottle"
     category: "sports"
     price: 19.99
+  - id: "prod-011"
+    name: "Mechanical Keyboard"
+    category: "electronics"
+    price: 119.99
+  - id: "prod-012"
+    name: "Gaming Mouse"
+    category: "electronics"
+    price: 59.99
+  - id: "prod-013"
+    name: "Monitor Stand"
+    category: "home"
+    price: 39.99
+  - id: "prod-014"
+    name: "Laptop Sleeve"
+    category: "accessories"
+    price: 24.99
+  - id: "prod-015"
+    name: "Smart Watch"
+    category: "electronics"
+    price: 199.99
+  - id: "prod-016"
+    name: "Portable SSD"
+    category: "electronics"
+    price: 149.99
+  - id: "prod-017"
+    name: "Phone Charger"
+    category: "electronics"
+    price: 19.99
+  - id: "prod-018"
+    name: "Wireless Earbuds"
+    category: "electronics"
+    price: 89.99
+  - id: "prod-019"
+    name: "Office Chair"
+    category: "home"
+    price: 249.99
+  - id: "prod-020"
+    name: "Standing Desk"
+    category: "home"
+    price: 399.99
+  - id: "prod-021"
+    name: "Treadmill"
+    category: "sports"
+    price: 699.99
+  - id: "prod-022"
+    name: "Dumbbell Set"
+    category: "sports"
+    price: 99.99
+  - id: "prod-023"
+    name: "Resistance Bands"
+    category: "sports"
+    price: 24.99
+  - id: "prod-024"
+    name: "Basketball"
+    category: "sports"
+    price: 29.99
+  - id: "prod-025"
+    name: "Football"
+    category: "sports"
+    price: 34.99
+  - id: "prod-026"
+    name: "Camping Tent"
+    category: "outdoors"
+    price: 199.99
+  - id: "prod-027"
+    name: "Sleeping Bag"
+    category: "outdoors"
+    price: 89.99
+  - id: "prod-028"
+    name: "Hiking Backpack"
+    category: "outdoors"
+    price: 129.99
+  - id: "prod-029"
+    name: "LED Flashlight"
+    category: "outdoors"
+    price: 19.99
+  - id: "prod-030"
+    name: "Travel Mug"
+    category: "home"
+    price: 14.99
+  - id: "prod-031"
+    name: "Air Fryer"
+    category: "home"
+    price: 89.99
+  - id: "prod-032"
+    name: "Blender"
+    category: "home"
+    price: 59.99
+  - id: "prod-033"
+    name: "Rice Cooker"
+    category: "home"
+    price: 49.99
+  - id: "prod-034"
+    name: "Vacuum Cleaner"
+    category: "home"
+    price: 179.99
+  - id: "prod-035"
+    name: "Bookshelf"
+    category: "home"
+    price: 119.99
+  - id: "prod-036"
+    name: "Wall Clock"
+    category: "home"
+    price: 29.99
+  - id: "prod-037"
+    name: "Table Fan"
+    category: "home"
+    price: 44.99
+  - id: "prod-038"
+    name: "Electric Kettle"
+    category: "home"
+    price: 34.99
+  - id: "prod-039"
+    name: "Toaster"
+    category: "home"
+    price: 29.99
+  - id: "prod-040"
+    name: "Microwave Oven"
+    category: "home"
+    price: 149.99
+  - id: "prod-041"
+    name: "Winter Jacket"
+    category: "fashion"
+    price: 129.99
+  - id: "prod-042"
+    name: "Jeans"
+    category: "fashion"
+    price: 59.99
+  - id: "prod-043"
+    name: "Casual Shirt"
+    category: "fashion"
+    price: 39.99
+  - id: "prod-044"
+    name: "Formal Shoes"
+    category: "fashion"
+    price: 99.99
+  - id: "prod-045"
+    name: "Leather Belt"
+    category: "fashion"
+    price: 34.99
+  - id: "prod-046"
+    name: "Wallet"
+    category: "fashion"
+    price: 29.99
+  - id: "prod-047"
+    name: "Beanie"
+    category: "fashion"
+    price: 19.99
+  - id: "prod-048"
+    name: "Sports Cap"
+    category: "fashion"
+    price: 14.99
+  - id: "prod-049"
+    name: "Raincoat"
+    category: "fashion"
+    price: 69.99
+  - id: "prod-050"
+    name: "Sneakers"
+    category: "fashion"
+    price: 89.99
+  - id: "prod-051"
+    name: "Tablet"
+    category: "electronics"
+    price: 349.99
+  - id: "prod-052"
+    name: "Webcam"
+    category: "electronics"
+    price: 79.99
+  - id: "prod-053"
+    name: "Microphone"
+    category: "electronics"
+    price: 99.99
+  - id: "prod-054"
+    name: "External Hard Drive"
+    category: "electronics"
+    price: 109.99
+  - id: "prod-055"
+    name: "Router"
+    category: "electronics"
+    price: 89.99
+  - id: "prod-056"
+    name: "Power Bank"
+    category: "electronics"
+    price: 39.99
+  - id: "prod-057"
+    name: "Action Camera"
+    category: "electronics"
+    price: 249.99
+  - id: "prod-058"
+    name: "Drone"
+    category: "electronics"
+    price: 499.99
+  - id: "prod-059"
+    name: "Graphics Tablet"
+    category: "electronics"
+    price: 149.99
+  - id: "prod-060"
+    name: "Smart Bulb"
+    category: "electronics"
+    price: 24.99
 
 search_queries:
   - "wireless headphones"
@@ -97,8 +303,92 @@ search_queries:
   - "sunglasses"
   - "bluetooth speaker"
   - "water bottle"
-  - "laptop accessories"
+  - "gaming keyboard"
+  - "gaming mouse"
+  - "office chair"
+  - "standing desk"
+  - "portable ssd"
+  - "smart watch"
+  - "wireless earbuds"
+  - "phone charger"
+  - "tablet"
+  - "webcam"
+  - "microphone"
+  - "router"
+  - "power bank"
+  - "action camera"
+  - "drone"
+  - "smart home devices"
   - "fitness equipment"
   - "home office"
-  - "gifts under $50"
   - "best sellers"
+  - "new arrivals"
+  - "electronics under $100"
+  - "electronics under $500"
+  - "sports equipment"
+  - "outdoor gear"
+  - "camping tent"
+  - "sleeping bag"
+  - "hiking backpack"
+  - "kitchen appliances"
+  - "air fryer"
+  - "blender"
+  - "rice cooker"
+  - "vacuum cleaner"
+  - "microwave oven"
+  - "winter jacket"
+  - "formal shoes"
+  - "casual shirts"
+  - "men's fashion"
+  - "women's fashion"
+  - "laptop accessories"
+  - "work from home"
+  - "travel essentials"
+  - "office supplies"
+  - "wireless gadgets"
+  - "budget electronics"
+  - "premium electronics"
+  - "gift ideas"
+  - "gifts under $25"
+  - "gifts under $50"
+  - "gifts under $100"
+  - "holiday deals"
+  - "summer essentials"
+  - "winter essentials"
+  - "back to school"
+  - "fitness tracker"
+  - "home decor"
+  - "wall clock"
+  - "bookshelf"
+  - "travel mug"
+  - "electric kettle"
+  - "toaster"
+  - "coffee accessories"
+  - "kitchen tools"
+  - "wireless charging"
+  - "smart gadgets"
+  - "computer accessories"
+  - "monitor stand"
+  - "external storage"
+  - "productivity setup"
+  - "remote work setup"
+  - "best rated products"
+  - "top electronics"
+  - "top sports gear"
+  - "discounted products"
+  - "eco friendly products"
+  - "portable devices"
+  - "home improvement"
+  - "outdoor adventure"
+  - "exercise equipment"
+  - "daily essentials"
+  - "travel accessories"
+  - "wireless audio"
+  - "gaming accessories"
+  - "desk setup"
+  - "smart lighting"
+  - "tech gifts"
+  - "popular products"
+  - "customer favorites"
+  - "trending now"
+  - "limited time offers"

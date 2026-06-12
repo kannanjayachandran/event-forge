@@ -12,11 +12,11 @@ import (
 )
 
 type Config struct {
-	Kafka         KafkaConfig         `mapstructure:"kafka"`
-	StateMachine  StateMachineConfig  `mapstructure:"state_machine"`
-	Simulator     SimulatorConfig     `mapstructure:"simulator"`
-	Products      []Product           `mapstructure:"products"`
-	SearchQueries []string            `mapstructure:"search_queries"`
+	Kafka         KafkaConfig        `mapstructure:"kafka"`
+	StateMachine  StateMachineConfig `mapstructure:"state_machine"`
+	Simulator     SimulatorConfig    `mapstructure:"simulator"`
+	Products      []Product          `mapstructure:"products"`
+	SearchQueries []string           `mapstructure:"search_queries"`
 }
 
 type KafkaConfig struct {
@@ -39,6 +39,14 @@ type SimulatorConfig struct {
 	Sinks           []string      `mapstructure:"sinks"`
 	OutputFile      string        `mapstructure:"output_file"`
 	MetricsAddr     string        `mapstructure:"metrics_addr"`
+	Timing          TimingConfig  `mapstructure:"timing"`
+}
+
+type TimingConfig struct {
+	Distribution string  `mapstructure:"distribution"`
+	Alpha        float64 `mapstructure:"alpha"`
+	Mu           float64 `mapstructure:"mu"`
+	Sigma        float64 `mapstructure:"sigma"`
 }
 
 type Product struct {

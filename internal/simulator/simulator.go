@@ -2,6 +2,7 @@ package simulator
 
 import (
 	"context"
+	"math"
 	"math/rand"
 	"sync"
 	"time"
@@ -19,15 +20,15 @@ import (
 )
 
 type Simulator struct {
-	cfg       *config.Config
-	sm        *statemachine.StateMachine
-	gen       *generator.Generator
-	producer  *producer.Producer
-	sinks     []sink.Sink
-	logger    *zap.Logger
-	rng       *rand.Rand
-	cancel    context.CancelFunc
-	wg        sync.WaitGroup
+	cfg      *config.Config
+	sm       *statemachine.StateMachine
+	gen      *generator.Generator
+	producer *producer.Producer
+	sinks    []sink.Sink
+	logger   *zap.Logger
+	rng      *rand.Rand
+	cancel   context.CancelFunc
+	wg       sync.WaitGroup
 }
 
 func New(cfg *config.Config, p *producer.Producer, sinks []sink.Sink, logger *zap.Logger) (*Simulator, error) {
@@ -55,27 +56,19 @@ func (s *Simulator) Run(ctx context.Context) error {
 	ctx, s.cancel = context.WithCancel(ctx)
 	defer s.cancel()
 
-	interval := time.Second / time.Duration(s.cfg.Simulator.EventsPerSecond)
-	if interval < time.Millisecond {
-		interval = time.Millisecond
-	}
-
 	metrics.ActiveUsers.Set(float64(s.cfg.Simulator.ConcurrentUsers))
 
 	for i := 0; i < s.cfg.Simulator.ConcurrentUsers; i++ {
 		s.wg.Add(1)
-		go s.runSession(ctx, interval)
+		go s.runSession(ctx)
 	}
 
 	s.wg.Wait()
 	return nil
 }
 
-func (s *Simulator) runSession(ctx context.Context, interval time.Duration) {
+func (s *Simulator) runSession(ctx context.Context) {
 	defer s.wg.Done()
-
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
 
 	sessionID := uuid.New().String()
 	userID := uuid.New().String()
@@ -87,51 +80,97 @@ func (s *Simulator) runSession(ctx context.Context, interval time.Duration) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-ticker.C:
-			start := time.Now()
+		default:
+		}
 
-			evt := model.Event{
-				EventID:   uuid.New().String(),
-				Timestamp: time.Now().UTC(),
-				SessionID: sessionID,
-				UserID:    userID,
-				EventType: currentState,
-				Data:      s.gen.GenerateData(currentState),
+		start := time.Now()
+
+		evt := model.Event{
+			EventID:   uuid.New().String(),
+			Timestamp: time.Now().UTC(),
+			SessionID: sessionID,
+			UserID:    userID,
+			EventType: currentState,
+			Data:      s.gen.GenerateData(currentState),
+		}
+
+		for _, sk := range s.sinks {
+			if err := sk.Write(evt); err != nil {
+				s.logger.Error("sink write failed", zap.Error(err))
 			}
+		}
 
-			for _, sk := range s.sinks {
-				if err := sk.Write(evt); err != nil {
-					s.logger.Error("sink write failed", zap.Error(err))
-				}
-			}
+		if err := s.producer.Send(ctx, evt); err != nil {
+			s.logger.Error("producer send failed", zap.Error(err))
+		}
 
-			if err := s.producer.Send(ctx, evt); err != nil {
-				s.logger.Error("producer send failed", zap.Error(err))
-			}
+		metrics.EventsProduced.WithLabelValues(string(currentState)).Inc()
+		metrics.EventDuration.WithLabelValues(string(currentState)).Observe(time.Since(start).Seconds())
 
-			metrics.EventsProduced.WithLabelValues(string(currentState)).Inc()
-			metrics.EventDuration.WithLabelValues(string(currentState)).Observe(time.Since(start).Seconds())
-
-			if model.TerminalStates[currentState] {
-				sessionID = uuid.New().String()
-				userID = uuid.New().String()
-				currentState = model.StateLanding
-				metrics.SessionsCreated.Inc()
-				continue
-			}
-
+		if model.TerminalStates[currentState] {
+			sessionID = uuid.New().String()
+			userID = uuid.New().String()
+			currentState = model.StateLanding
+			metrics.SessionsCreated.Inc()
+		} else {
 			nextState, ended := s.sm.Next(currentState)
 			if ended {
 				sessionID = uuid.New().String()
 				userID = uuid.New().String()
 				currentState = model.StateLanding
 				metrics.SessionsCreated.Inc()
-				continue
+			} else {
+				currentState = nextState
 			}
+		}
 
-			currentState = nextState
+		delay := s.sampleDelay()
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(delay):
 		}
 	}
+}
+
+func (s *Simulator) sampleDelay() time.Duration {
+	dist := s.cfg.Simulator.Timing.Distribution
+	if dist == "" {
+		dist = "exponential"
+	}
+
+	var delay float64
+	switch dist {
+	case "lognormal":
+		mu := s.cfg.Simulator.Timing.Mu
+		sigma := s.cfg.Simulator.Timing.Sigma
+		if sigma <= 0 {
+			sigma = 1.0
+		}
+		delay = s.logNormalSample(mu, sigma)
+	default:
+		alpha := s.cfg.Simulator.Timing.Alpha
+		if alpha <= 0 {
+			alpha = 1.0 / s.cfg.Simulator.EventsPerSecond
+		}
+		delay = s.rng.ExpFloat64() * alpha
+	}
+
+	minDelay := 1.0
+	maxDelay := 30.0
+	if delay < minDelay {
+		delay = minDelay
+	}
+	if delay > maxDelay {
+		delay = maxDelay
+	}
+
+	return time.Duration(delay * float64(time.Second))
+}
+
+func (s *Simulator) logNormalSample(mu, sigma float64) float64 {
+	z := s.rng.NormFloat64()
+	return math.Exp(mu + sigma*z)
 }
 
 func (s *Simulator) Stop() {

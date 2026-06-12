@@ -20,7 +20,7 @@ services:
       - "18082:18082"
       - "18081:18081"
     healthcheck:
-      test: ["CMD-SHELL", "rpk cluster health | grep -E 'Healthy|Degraded'"]
+      test: [ "CMD-SHELL", "rpk cluster health | grep -E 'Healthy|Degraded'" ]
       interval: 10s
       timeout: 3s
       retries: 15
@@ -45,12 +45,14 @@ services:
       - SIM_KAFKA_BROKERS=redpanda:9092
       - SIM_KAFKA_TOPIC=ecommerce-events
       - SIM_SIMULATOR_SEED=42
-      - SIM_SIMULATOR_CONCURRENT_USERS=10
-      - SIM_SIMULATOR_EVENTS_PER_SECOND=5
+      - SIM_SIMULATOR_CONCURRENT_USERS=250
+      - SIM_SIMULATOR_EVENTS_PER_SECOND=800
       - SIM_SIMULATOR_SESSION_DURATION=60s
       - SIM_SIMULATOR_SINKS=file
       - SIM_SIMULATOR_OUTPUT_FILE=/var/log/sim/events.ndjson
       - SIM_SIMULATOR_METRICS_ADDR=:8080
+      - SIM_SIMULATOR_TIMING_DISTRIBUTION=exponential
+      - SIM_SIMULATOR_TIMING_ALPHA=0.2
     ports:
       - "8080:8080"
     volumes:

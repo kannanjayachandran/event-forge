@@ -1,84 +1,188 @@
-# Event Forge
+# EventForge
 
-Modern Event Simulation Platform for Data Engineering
+> #### Synthetic Event Simulation Platform for Data Engineering
 
-## Overview
+EventForge generates realistic synthetic e-commerce activity for testing data pipelines, streaming systems, analytics platforms, and data infrastructure.
 
-Event Forge is a high-performance event stream simulator that generates synthetic e-commerce events. It simulates user journeys through a configurable state machine, producing realistic event streams for testing data pipelines, stream processing systems, and analytics platforms.
+Instead of replaying static datasets, EventForge simulates user behavior through configurable state machines and produces coherent event streams suitable for Kafka, data lakes, warehouses, and analytics workloads.
+
+## Why EventForge?
+
+Building and testing data systems often requires large volumes of realistic event data. Production data is usually unavailable due to privacy, compliance, or operational constraints.
+
+EventForge provides:
+
+* Realistic user journey simulation
+* Deterministic replay using seeded generation
+* Configurable traffic patterns and behavior
+* Kafka-native event streaming
+* Local development and benchmarking environments
+* Containerized deployment with observability
+
+Typical use cases:
+
+* Kafka and Redpanda testing
+* Stream processing validation
+* Data pipeline development
+* Analytics engineering
+* Warehouse benchmarking
+* Dashboard prototyping
+* Load and performance testing
+
+---
 
 ## Features
 
-- **State Machine Simulation**: Users transition through 6 states: `landing` → `search` → `product_view` → `add_to_cart` → `checkout` → `purchase`
-- **Configurable Transitions**: Probabilities for state transitions defined in YAML config
-- **Kafka Integration**: Async batched writes with compression support (snappy, gzip, lz4, zstd)
-- **Multiple Sinks**: Output to stdout and/or file (NDJSON format)
-- **Prometheus Metrics**: Built-in metrics endpoint for monitoring event production
-- **Docker Ready**: Full docker-compose setup with Redpanda (Kafka-compatible), Prometheus, and Grafana
+### Event Simulation
+
+* Configurable e-commerce state machine
+* Session-based user journeys
+* State-specific event payloads
+* Deterministic replay via configurable seeds
+
+Current flow:
+
+```text
+landing
+  ↓
+search
+  ↓
+product_view
+  ↓
+add_to_cart
+  ↓
+checkout
+  ↓
+purchase
+```
+
+### Streaming
+
+* Kafka / Redpanda integration
+* Asynchronous batching
+* Compression support
+
+  * Snappy
+  * Gzip
+  * LZ4
+  * ZSTD
+
+### Outputs
+
+* Kafka
+* NDJSON files
+* Stdout
+
+### Observability
+
+* Prometheus metrics
+* Grafana dashboards
+* Real-time event monitoring
+
+### Deployment
+
+* Docker Compose environment
+* Redpanda broker
+* Prometheus
+* Grafana
+
+---
 
 ## Architecture
 
+```text
+                 ┌─────────────┐
+                 │   Config    │
+                 └──────┬──────┘
+                        │
+                        ▼
+              ┌──────────────────┐
+              │ Simulation Engine│
+              └────────┬─────────┘
+                       │
+                       ▼
+              ┌──────────────────┐
+              │ Event Generation │
+              └────────┬─────────┘
+                       │
+         ┌─────────────┼─────────────┐
+         │             │             │
+         ▼             ▼             ▼
+      Kafka         File         Stdout
 ```
-┌─────────────┐     ┌─────────────┐     ┌───────────┐
-│  Config     │────▶│  Simulator  │────▶│  Sinks    │
-│             │     │             │     │ (stdout/  │
-└─────────────┘     └──────┬──────┘     │  file)    │
-                           │            └───────────┘
-                           │
-                           ▼
-                    ┌─────────────┐
-                    │  Producer   │
-                    │  (kafka)    │
-                    └─────────────┘
-```
+
+---
 
 ## Quick Start
 
-### Run Locally
+### Local Development
 
 ```bash
 go run ./cmd/sim -c configs/config.yaml
 ```
 
-### Run with Docker
+### Docker
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
-This starts:
-- Redpanda broker at `localhost:19092`
-- Simulator with metrics at `localhost:8080/metrics`
-- Prometheus at `localhost:9090`
-- Grafana at `localhost:3000` (admin/admin)
+Services:
+
+| Service    | Address                |
+| ---------- | ---------------------- |
+| Redpanda   | localhost:19092        |
+| Metrics    | localhost:8080/metrics |
+| Prometheus | localhost:9090         |
+| Grafana    | localhost:3000         |
+
+Grafana credentials:
+
+```text
+admin / admin
+```
+
+---
 
 ## Configuration
 
+Example:
+
 ```yaml
 kafka:
-  brokers: ["localhost:19092"]
+  brokers:
+    - "localhost:19092"
   topic: "ecommerce-events"
   batch_size: 100
   batch_timeout: "1s"
   compression: "snappy"
 
-state_machine:
-  transitions:
-    - from: "landing"
-      to: "search"
-      probability: 0.8
-
 simulator:
   seed: 42
   concurrent_users: 20
   events_per_second: 25
-  sinks: ["stdout", "file"]
+
+  sinks:
+    - stdout
+    - file
+
   output_file: "/var/log/sim/events.ndjson"
-  metrics_addr: ":8080"
+
+state_machine:
+  transitions:
+    - from: landing
+      to: search
+      probability: 0.8
 ```
 
-Environment variables (prefixed with `SIM_`):
-- `SIM_KAFKA_BROKERS` - Comma-separated broker list
-- `SIM_SIMULATOR_SINKS` - Comma-separated sink list
+Environment variable overrides:
+
+```text
+SIM_KAFKA_BROKERS
+SIM_SIMULATOR_SINKS
+```
+
+---
 
 ## Event Schema
 
@@ -89,32 +193,56 @@ Environment variables (prefixed with `SIM_`):
   "session_id": "uuid",
   "user_id": "uuid",
   "event_type": "search",
-  "data": { /* state-specific payload */ }
+  "data": {}
 }
 ```
 
+---
+
 ## Metrics
 
-- `sim_events_produced_total{event_type}` - Events per state
-- `sim_sessions_created_total` - Total user sessions
-- `sim_active_users` - Concurrent user count
-- `sim_kafka_messages_sent_total` - Kafka messages sent
-- `sim_kafka_batches_sent_total` - Kafka batches sent
+EventForge exposes Prometheus metrics including:
+
+```text
+sim_events_produced_total
+sim_sessions_created_total
+sim_active_users
+sim_kafka_messages_sent_total
+sim_kafka_batches_sent_total
+```
+
+---
 
 ## Testing
 
 ```bash
 go test ./...
+
 ./scripts/validate-transitions.sh
+
 ./scripts/test-acceptance.sh
 ```
 
-## Phase 1 Complete
+---
 
-- [x] State machine with configurable transitions
-- [x] Event generator with state-specific payloads
-- [x] Kafka producer with async batching
-- [x] Stdout and file sinks
-- [x] Prometheus metrics integration
-- [x] Docker-compose infrastructure
-- [x] Grafana dashboards
+## Current Status
+
+### Phase 1 Complete
+
+* State-machine driven event generation
+* Configurable transition probabilities
+* Deterministic simulation
+* Kafka producer with async batching
+* File and stdout sinks
+* Prometheus metrics
+* Grafana dashboards
+* Docker Compose deployment
+
+### Planned
+
+* Persistent users and personas
+* Temporal traffic patterns
+* Historical/backfill generation
+* Multi-domain support
+* Data quality anomaly injection
+* Source-system simulation

@@ -3,52 +3,56 @@ package generator
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/rand"
 
 	"event-sim/internal/config"
 	"event-sim/internal/model"
 )
 
+// Generator produces realistic fake event payloads for each simulation state.
 type Generator struct {
-	rng      *rand.Rand
 	products []config.Product
 	queries  []string
 }
 
-func New(rng *rand.Rand, cfg *config.Config) *Generator {
+// Returns a Generator configured from cfg
+func New(cfg *config.Config) *Generator {
 	return &Generator{
-		rng:      rng,
 		products: cfg.Products,
 		queries:  cfg.SearchQueries,
 	}
 }
 
-func (g *Generator) GenerateData(state model.State) json.RawMessage {
+// GenerateData produces a JSON payload for the given state
+// Returns an empty JSON object for unrecognised states.
+func (g *Generator) GenerateData(rng *rand.Rand, state model.State) json.RawMessage {
 	switch state {
 	case model.StateLanding:
 		return g.landingData()
 	case model.StateSearch:
-		return g.searchData()
+		return g.searchData(rng)
 	case model.StateProductView:
-		return g.productViewData()
+		return g.productViewData(rng)
 	case model.StateAddToCart:
-		return g.addToCartData()
+		return g.addToCartData(rng)
 	case model.StateCheckout:
-		return g.checkoutData()
+		return g.checkoutData(rng)
 	case model.StatePurchase:
-		return g.purchaseData()
+		return g.purchaseData(rng)
 	default:
 		return json.RawMessage(`{}`)
 	}
 }
 
+// landingData is deterministic
 func (g *Generator) landingData() json.RawMessage {
 	return json.RawMessage(`{"page":"/","referrer":"direct"}`)
 }
 
-func (g *Generator) searchData() json.RawMessage {
-	q := g.queries[g.rng.Intn(len(g.queries))]
-	results := g.rng.Intn(50) + 1
+func (g *Generator) searchData(rng *rand.Rand) json.RawMessage {
+	q := g.queries[rng.Intn(len(g.queries))]
+	results := rng.Intn(50) + 1
 	data, _ := json.Marshal(map[string]any{
 		"query":   q,
 		"results": results,
@@ -56,8 +60,8 @@ func (g *Generator) searchData() json.RawMessage {
 	return data
 }
 
-func (g *Generator) productViewData() json.RawMessage {
-	p := g.products[g.rng.Intn(len(g.products))]
+func (g *Generator) productViewData(rng *rand.Rand) json.RawMessage {
+	p := g.products[rng.Intn(len(g.products))]
 	data, _ := json.Marshal(map[string]any{
 		"product_id": p.ID,
 		"name":       p.Name,
@@ -67,9 +71,9 @@ func (g *Generator) productViewData() json.RawMessage {
 	return data
 }
 
-func (g *Generator) addToCartData() json.RawMessage {
-	p := g.products[g.rng.Intn(len(g.products))]
-	qty := g.rng.Intn(3) + 1
+func (g *Generator) addToCartData(rng *rand.Rand) json.RawMessage {
+	p := g.products[rng.Intn(len(g.products))]
+	qty := rng.Intn(3) + 1
 	data, _ := json.Marshal(map[string]any{
 		"product_id": p.ID,
 		"name":       p.Name,
@@ -80,9 +84,9 @@ func (g *Generator) addToCartData() json.RawMessage {
 	return data
 }
 
-func (g *Generator) checkoutData() json.RawMessage {
-	items := g.rng.Intn(5) + 1
-	total := float64(items) * (g.rng.Float64()*100 + 20)
+func (g *Generator) checkoutData(rng *rand.Rand) json.RawMessage {
+	items := rng.Intn(5) + 1
+	total := float64(items) * (rng.Float64()*100 + 20)
 	data, _ := json.Marshal(map[string]any{
 		"cart_size": items,
 		"total":     round2(total),
@@ -90,11 +94,11 @@ func (g *Generator) checkoutData() json.RawMessage {
 	return data
 }
 
-func (g *Generator) purchaseData() json.RawMessage {
-	items := g.rng.Intn(5) + 1
-	total := float64(items) * (g.rng.Float64()*100 + 20)
+func (g *Generator) purchaseData(rng *rand.Rand) json.RawMessage {
+	items := rng.Intn(5) + 1
+	total := float64(items) * (rng.Float64()*100 + 20)
 	data, _ := json.Marshal(map[string]any{
-		"order_id":    fmt.Sprintf("ORD-%08d", g.rng.Intn(100000000)),
+		"order_id":    fmt.Sprintf("ORD-%08d", rng.Intn(100000000)),
 		"total":       round2(total),
 		"items_count": items,
 	})
@@ -102,5 +106,5 @@ func (g *Generator) purchaseData() json.RawMessage {
 }
 
 func round2(f float64) float64 {
-	return float64(int(f*100)) / 100
+	return math.Round(f*100) / 100
 }

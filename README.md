@@ -217,10 +217,6 @@ sim_kafka_batches_sent_total
 
 ```bash
 go test ./...
-
-./scripts/validate-transitions.sh
-
-./scripts/test-acceptance.sh
 ```
 
 ---

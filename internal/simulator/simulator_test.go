@@ -48,7 +48,7 @@ func produceEvents(t *testing.T, seed int64, sinkPath string, count int) {
 		{From: model.StateCheckout, To: model.StateAddToCart, Probability: 0.2},
 	}
 
-	sm, err := statemachine.New(rng, transitions)
+	sm, err := statemachine.New(transitions)
 	require.NoError(t, err)
 
 	cfg := &config.Config{
@@ -60,7 +60,7 @@ func produceEvents(t *testing.T, seed int64, sinkPath string, count int) {
 		SearchQueries: []string{"headphones", "shoes", "coffee"},
 	}
 
-	gen := generator.New(rng, cfg)
+	gen := generator.New(cfg)
 
 	fs, err := sink.NewFileSink(sinkPath)
 	require.NoError(t, err)
@@ -77,7 +77,7 @@ func produceEvents(t *testing.T, seed int64, sinkPath string, count int) {
 			SessionID: sessionID,
 			UserID:    userID,
 			EventType: state,
-			Data:      gen.GenerateData(state),
+			Data:      gen.GenerateData(rng, state),
 		}
 
 		require.NoError(t, fs.Write(evt))
@@ -89,7 +89,7 @@ func produceEvents(t *testing.T, seed int64, sinkPath string, count int) {
 			continue
 		}
 
-		next, ended := sm.Next(state)
+		next, ended := sm.Next(rng, state)
 		if ended {
 			sessionID = deterministicUUID(rng)
 			userID = deterministicUUID(rng)
@@ -252,7 +252,7 @@ func BenchmarkThroughput(b *testing.B) {
 		{From: model.StateCheckout, To: model.StatePurchase, Probability: 0.7},
 		{From: model.StateCheckout, To: model.StateAddToCart, Probability: 0.2},
 	}
-	sm, _ := statemachine.New(rng, transitions)
+	sm, _ := statemachine.New(transitions)
 
 	cfg := &config.Config{
 		Products: []config.Product{
@@ -262,7 +262,7 @@ func BenchmarkThroughput(b *testing.B) {
 		},
 		SearchQueries: []string{"headphones", "shoes", "coffee"},
 	}
-	gen := generator.New(rng, cfg)
+	gen := generator.New(cfg)
 
 	fs, _ := sink.NewFileSink(filepath.Join(dir, "bench.ndjson"))
 	defer fs.Close()
@@ -280,7 +280,7 @@ func BenchmarkThroughput(b *testing.B) {
 			SessionID: sessionID,
 			UserID:    userID,
 			EventType: state,
-			Data:      gen.GenerateData(state),
+			Data:      gen.GenerateData(rng, state),
 		}
 		fs.Write(evt)
 
@@ -290,7 +290,7 @@ func BenchmarkThroughput(b *testing.B) {
 			state = model.StateLanding
 			continue
 		}
-		next, ended := sm.Next(state)
+		next, ended := sm.Next(rng, state)
 		if ended {
 			sessionID = deterministicUUID(rng)
 			userID = deterministicUUID(rng)

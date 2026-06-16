@@ -28,11 +28,11 @@ func TestNewStateMachine(t *testing.T) {
 	}
 
 	rng := rand.New(rand.NewSource(42))
-	sm, err := New(rng, transitions)
+	sm, err := New(transitions)
 	require.NoError(t, err)
 	require.NotNil(t, sm)
 
-	_, ended := sm.Next(model.StatePurchase)
+	_, ended := sm.Next(rng, model.StatePurchase)
 	assert.True(t, ended)
 }
 
@@ -42,17 +42,16 @@ func TestStateMachineExceedsProbability(t *testing.T) {
 		{From: model.StateLanding, To: model.StateProductView, Probability: 0.2},
 	}
 
-	rng := rand.New(rand.NewSource(42))
-	_, err := New(rng, transitions)
+	_, err := New(transitions)
 	assert.Error(t, err)
 }
 
 func TestNoTransitionsEnds(t *testing.T) {
 	rng := rand.New(rand.NewSource(42))
-	sm, err := New(rng, nil)
+	sm, err := New(nil)
 	require.NoError(t, err)
 
-	_, ended := sm.Next(model.StateLanding)
+	_, ended := sm.Next(rng, model.StateLanding)
 	assert.True(t, ended)
 }
 
@@ -62,10 +61,10 @@ func TestEmptyTransitionsForStateEnds(t *testing.T) {
 	}
 
 	rng := rand.New(rand.NewSource(42))
-	sm, err := New(rng, transitions)
+	sm, err := New(transitions)
 	require.NoError(t, err)
 
-	_, ended := sm.Next(model.StateLanding)
+	_, ended := sm.Next(rng, model.StateLanding)
 	assert.True(t, ended)
 }
 
@@ -80,12 +79,12 @@ func TestStateMachineValidity(t *testing.T) {
 	}
 
 	rng := rand.New(rand.NewSource(42))
-	sm, err := New(rng, defaultTransitions)
+	sm, err := New(defaultTransitions)
 	require.NoError(t, err)
 
 	state := model.StateLanding
 	for i := 0; i < 10000; i++ {
-		next, ended := sm.Next(state)
+		next, ended := sm.Next(rng, state)
 
 		if ended || next == model.StatePurchase {
 			if ended && state != model.StatePurchase {
@@ -113,13 +112,13 @@ func TestDropOffProbability(t *testing.T) {
 		}
 
 		rng := rand.New(rand.NewSource(42))
-		sm, err := New(rng, transitions)
+		sm, err := New(transitions)
 		require.NoError(t, err)
 
 		sessions := 100000
 		dropOffs := 0
 		for i := 0; i < sessions; i++ {
-			_, ended := sm.Next(model.StateLanding)
+			_, ended := sm.Next(rng, model.StateLanding)
 			if ended {
 				dropOffs++
 			}
@@ -136,13 +135,13 @@ func TestDropOffProbability(t *testing.T) {
 		}
 
 		rng := rand.New(rand.NewSource(99))
-		sm, err := New(rng, transitions)
+		sm, err := New(transitions)
 		require.NoError(t, err)
 
 		sessions := 100000
 		dropOffs := 0
 		for i := 0; i < sessions; i++ {
-			_, ended := sm.Next(model.StateSearch)
+			_, ended := sm.Next(rng, model.StateSearch)
 			if ended {
 				dropOffs++
 			}
@@ -160,13 +159,13 @@ func TestDropOffProbability(t *testing.T) {
 		}
 
 		rng := rand.New(rand.NewSource(7))
-		sm, err := New(rng, transitions)
+		sm, err := New(transitions)
 		require.NoError(t, err)
 
 		total := 100000
 		purchases := 0
 		for i := 0; i < total; i++ {
-			next, ended := sm.Next(model.StateCheckout)
+			next, ended := sm.Next(rng, model.StateCheckout)
 			if next == model.StatePurchase {
 				purchases++
 			}
@@ -182,13 +181,13 @@ func TestDropOffProbability(t *testing.T) {
 // Test 5 — Deterministic Replay: same seed → identical sequence
 func TestDeterministicReplay(t *testing.T) {
 	rng1 := rand.New(rand.NewSource(12345))
-	sm1, _ := New(rng1, defaultTransitions)
+	sm1, _ := New(defaultTransitions)
 
 	state := model.StateLanding
 	var states1 []model.State
 	for i := 0; i < 200; i++ {
 		states1 = append(states1, state)
-		next, ended := sm1.Next(state)
+		next, ended := sm1.Next(rng1, state)
 		if ended || next == model.StatePurchase {
 			state = model.StateLanding
 		} else {
@@ -197,13 +196,13 @@ func TestDeterministicReplay(t *testing.T) {
 	}
 
 	rng2 := rand.New(rand.NewSource(12345))
-	sm2, _ := New(rng2, defaultTransitions)
+	sm2, _ := New(defaultTransitions)
 
 	state = model.StateLanding
 	var states2 []model.State
 	for i := 0; i < 200; i++ {
 		states2 = append(states2, state)
-		next, ended := sm2.Next(state)
+		next, ended := sm2.Next(rng2, state)
 		if ended || next == model.StatePurchase {
 			state = model.StateLanding
 		} else {
@@ -217,16 +216,16 @@ func TestDeterministicReplay(t *testing.T) {
 // Test 6 — Different Seeds → Different Data
 func TestDifferentSeedsProduceDifferentData(t *testing.T) {
 	rng1 := rand.New(rand.NewSource(42))
-	sm1, _ := New(rng1, defaultTransitions)
+	sm1, _ := New(defaultTransitions)
 
 	rng2 := rand.New(rand.NewSource(43))
-	sm2, _ := New(rng2, defaultTransitions)
+	sm2, _ := New(defaultTransitions)
 
 	var seq1, seq2 []model.State
 	state := model.StateLanding
 	for i := 0; i < 200; i++ {
 		seq1 = append(seq1, state)
-		next, ended := sm1.Next(state)
+		next, ended := sm1.Next(rng1, state)
 		if ended || next == model.StatePurchase {
 			state = model.StateLanding
 		} else {
@@ -237,7 +236,7 @@ func TestDifferentSeedsProduceDifferentData(t *testing.T) {
 	state = model.StateLanding
 	for i := 0; i < 200; i++ {
 		seq2 = append(seq2, state)
-		next, ended := sm2.Next(state)
+		next, ended := sm2.Next(rng2, state)
 		if ended || next == model.StatePurchase {
 			state = model.StateLanding
 		} else {

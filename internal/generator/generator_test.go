@@ -26,10 +26,10 @@ func TestGeneratorDeterministic(t *testing.T) {
 	cfg := testConfig()
 
 	rng1 := rand.New(rand.NewSource(42))
-	gen1 := New(rng1, cfg)
+	gen1 := New(cfg)
 
 	rng2 := rand.New(rand.NewSource(42))
-	gen2 := New(rng2, cfg)
+	gen2 := New(cfg)
 
 	states := []model.State{
 		model.StateLanding,
@@ -42,8 +42,8 @@ func TestGeneratorDeterministic(t *testing.T) {
 
 	for i := 0; i < 50; i++ {
 		s := states[i%len(states)]
-		d1 := gen1.GenerateData(s)
-		d2 := gen2.GenerateData(s)
+		d1 := gen1.GenerateData(rng1, s)
+		d2 := gen2.GenerateData(rng2, s)
 		assert.Equal(t, string(d1), string(d2),
 			"generator output differs at step %d for state %s", i, s)
 	}
@@ -52,7 +52,7 @@ func TestGeneratorDeterministic(t *testing.T) {
 func TestGeneratorAllStatesProduceValidJSON(t *testing.T) {
 	cfg := testConfig()
 	rng := rand.New(rand.NewSource(42))
-	gen := New(rng, cfg)
+	gen := New(cfg)
 
 	states := []model.State{
 		model.StateLanding,
@@ -65,7 +65,7 @@ func TestGeneratorAllStatesProduceValidJSON(t *testing.T) {
 
 	for _, s := range states {
 		for i := 0; i < 20; i++ {
-			data := gen.GenerateData(s)
+			data := gen.GenerateData(rng, s)
 			require.True(t, len(data) > 2, "empty data for state %s", s)
 			require.True(t, data[0] == '{', "data should be JSON object for state %s, got: %s", s, string(data))
 		}
@@ -75,11 +75,11 @@ func TestGeneratorAllStatesProduceValidJSON(t *testing.T) {
 func TestGeneratorProductSelection(t *testing.T) {
 	cfg := testConfig()
 	rng := rand.New(rand.NewSource(42))
-	gen := New(rng, cfg)
+	gen := New(cfg)
 
 	seen := make(map[string]bool)
 	for i := 0; i < 100; i++ {
-		data := gen.GenerateData(model.StateProductView)
+		data := gen.GenerateData(rng, model.StateProductView)
 		seen[string(data)] = true
 	}
 

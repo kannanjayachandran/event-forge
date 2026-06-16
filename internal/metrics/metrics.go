@@ -50,4 +50,9 @@ var (
 			Help: "Total number of Kafka batches sent.",
 		},
 	)
+
+	EventsDropped = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "simulator_events_dropped_total",
+		Help: "Events dropped due to processor send failure or timeout,",
+	}, []string{"event_type"})
 )

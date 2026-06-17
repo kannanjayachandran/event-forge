@@ -36,7 +36,7 @@ state_machine:
 simulator:
   seed: 42
   concurrent_users: 250
-  events_per_second: 800
+  events_per_second: 500
   session_duration: "60s"
   sinks:
     - "stdout"

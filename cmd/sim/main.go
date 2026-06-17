@@ -128,7 +128,7 @@ func run(cfgFile string, verbose bool) error {
 
 func initTopic(brokers []string, topic string, logger *zap.Logger) error {
 	var lastErr error
-	for i := 0; i < 30; i++ {
+	for range 30 {
 		conn, err := kafka.Dial("tcp", brokers[0])
 		if err != nil {
 			lastErr = err

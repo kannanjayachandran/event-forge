@@ -5,6 +5,16 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
+// eventTypes lists every known simulation state so that counter-vec metrics
+// pre-initialise at zero and always appear in the /metrics endpoint.
+var eventTypes = []string{"landing", "search", "product_view", "add_to_cart", "checkout", "purchase"}
+
+func init() {
+	for _, s := range eventTypes {
+		EventsDropped.WithLabelValues(s).Add(0)
+	}
+}
+
 var (
 	EventsProduced = promauto.NewCounterVec(
 		prometheus.CounterOpts{
@@ -52,7 +62,7 @@ var (
 	)
 
 	EventsDropped = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "simulator_events_dropped_total",
-		Help: "Events dropped due to processor send failure or timeout,",
+		Name: "sim_events_dropped_total",
+		Help: "Events dropped due to producer send failure or timeout.",
 	}, []string{"event_type"})
 )

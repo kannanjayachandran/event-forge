@@ -1,16 +1,10 @@
 # EventForge
 
-> #### Synthetic Event Simulation Platform for Data Engineering
+> Synthetic Event Simulation Platform for Data Engineering
 
 EventForge generates realistic synthetic e-commerce activity for testing data pipelines, streaming systems, analytics platforms, and data infrastructure.
 
-Instead of replaying static datasets, EventForge simulates user behavior through configurable state machines and produces coherent event streams suitable for Kafka, data lakes, warehouses, and analytics workloads.
-
-## Why EventForge?
-
-Building and testing data systems often requires large volumes of realistic event data. Production data is usually unavailable due to privacy, compliance, or operational constraints.
-
-EventForge provides:
+Instead of replaying static datasets, EventForge simulates user behavior through configurable state machines and produces coherent event streams suitable for Kafka, data lakes, warehouses, and analytics workloads. Event forge provides;
 
 * Realistic user journey simulation
 * Deterministic replay using seeded generation
@@ -19,9 +13,8 @@ EventForge provides:
 * Local development and benchmarking environments
 * Containerized deployment with observability
 
-Typical use cases:
+## Use cases
 
-* Kafka and Redpanda testing
 * Stream processing validation
 * Data pipeline development
 * Analytics engineering
@@ -58,10 +51,9 @@ purchase
 
 ### Streaming
 
-* Kafka / Redpanda integration
+* Kafka integration
 * Asynchronous batching
 * Compression support
-
   * Snappy
   * Gzip
   * LZ4
@@ -75,8 +67,7 @@ purchase
 
 ### Observability
 
-* Prometheus metrics
-* Grafana dashboards
+* Prometheus metrics and Grafana dashboards (Optional)
 * Real-time event monitoring
 
 ### Deployment

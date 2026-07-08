@@ -2,12 +2,12 @@ package simulator
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"math/rand"
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"event-sim/internal/config"
@@ -52,7 +52,10 @@ type Simulator struct {
 	logger   *zap.Logger
 	seeder   *rand.Rand
 	cancel   context.CancelFunc
+	cancelMu sync.Mutex
 	wg       sync.WaitGroup
+	minDelay time.Duration
+	maxDelay time.Duration
 }
 
 func New(cfg *config.Config, p *producer.Producer, sinks []sink.Sink, logger *zap.Logger) (*Simulator, error) {
@@ -73,14 +76,20 @@ func New(cfg *config.Config, p *producer.Producer, sinks []sink.Sink, logger *za
 		sinks:    sinks,
 		logger:   logger,
 		seeder:   seeder,
+		minDelay: 10 * time.Millisecond,
+		maxDelay: 30 * time.Second,
 	}, nil
 }
 
 // Run starts all concurrent user sessions and blocks until ctx is cancelled
 // and every session goroutine has returned.
 func (s *Simulator) Run(ctx context.Context) error {
-	ctx, s.cancel = context.WithCancel(ctx)
-	defer s.cancel()
+	ctx2, cancel := context.WithCancel(ctx)
+	s.cancelMu.Lock()
+	s.cancel = cancel
+	s.cancelMu.Unlock()
+	ctx = ctx2
+	defer cancel()
 
 	metrics.ActiveUsers.Set(float64(s.cfg.Simulator.ConcurrentUsers))
 
@@ -100,7 +109,7 @@ func (s *Simulator) runSession(ctx context.Context) {
 
 	localRng := rand.New(rand.NewSource(s.seeder.Int63()))
 
-	sessionID, userID, currentState := s.newSession()
+	sessionID, userID, currentState := s.newSession(localRng)
 
 	// Allocate one timer for the goroutine lifetime. Reusing it avoids the
 	// per-iteration heap allocation
@@ -120,7 +129,7 @@ func (s *Simulator) runSession(ctx context.Context) {
 		start := time.Now()
 
 		evt := model.Event{
-			EventID:   uuid.New().String(),
+			EventID:   deterministicUUID(localRng),
 			Timestamp: start.UTC(),
 			SessionID: sessionID,
 			UserID:    userID,
@@ -146,11 +155,11 @@ func (s *Simulator) runSession(ctx context.Context) {
 		metrics.EventDuration.WithLabelValues(string(currentState)).Observe(float64(time.Since(start).Seconds()))
 
 		if model.TerminalStates[currentState] {
-			sessionID, userID, currentState = s.newSession()
+			sessionID, userID, currentState = s.newSession(localRng)
 		} else {
 			nextState, ended := s.sm.Next(localRng, currentState)
 			if ended {
-				sessionID, userID, currentState = s.newSession()
+				sessionID, userID, currentState = s.newSession(localRng)
 			} else {
 				currentState = nextState
 			}
@@ -168,27 +177,27 @@ func (s *Simulator) runSession(ctx context.Context) {
 }
 
 // newSession returns fresh identifiers and the initial state for a user session.
-func (s *Simulator) newSession() (sessionID, userID string, state model.State) {
+func (s *Simulator) newSession(rng *rand.Rand) (sessionID, userID string, state model.State) {
 	metrics.SessionsCreated.Inc()
-	return uuid.New().String(), uuid.New().String(), model.StateLanding
+	return deterministicUUID(rng), deterministicUUID(rng), model.StateLanding
 }
 
 // sampleDelay returns a delay drawn from the configured timing distribution,
-// clamped to [10ms, 30s].
+// clamped to [minDelay, maxDelay].
 func (s *Simulator) sampleDelay(rng *rand.Rand) time.Duration {
 	dist := s.cfg.Simulator.Timing.Distribution
 	if dist == "" {
 		dist = "exponential"
 	}
 
-	var delay float64
+	var delaySec float64
 	switch dist {
 	case "lognormal":
 		sigma := s.cfg.Simulator.Timing.Sigma
 		if sigma <= 0 {
 			sigma = 1.0
 		}
-		delay = logNormalSample(rng, s.cfg.Simulator.Timing.Mu, sigma)
+		delaySec = logNormalSample(rng, s.cfg.Simulator.Timing.Mu, sigma)
 	default: // exponential
 		alpha := s.cfg.Simulator.Timing.Alpha
 		if alpha <= 0 && s.cfg.Simulator.EventsPerSecond > 0 {
@@ -198,18 +207,26 @@ func (s *Simulator) sampleDelay(rng *rand.Rand) time.Duration {
 			alpha = 1.0
 		}
 
-		delay = rng.ExpFloat64() * alpha
+		delaySec = rng.ExpFloat64() * alpha
 	}
 
-	minDelay := 0.01
-	maxDelay := 30.0
-	if delay < minDelay {
-		delay = minDelay
-	} else if delay > maxDelay {
-		delay = maxDelay
+	d := time.Duration(delaySec * float64(time.Second))
+	if d < s.minDelay {
+		d = s.minDelay
+	} else if d > s.maxDelay {
+		d = s.maxDelay
 	}
+	return d
+}
 
-	return time.Duration(delay * float64(time.Second))
+// deterministicUUID generates a UUID v4 string from a seeded random source.
+func deterministicUUID(rng *rand.Rand) string {
+	b := make([]byte, 16)
+	rng.Read(b)
+	b[6] = (b[6] & 0x0f) | 0x40
+	b[8] = (b[8] & 0x3f) | 0x80
+	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
+		b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
 }
 
 // logNormalSample draws from LogNormal(mu, sigma)
@@ -219,8 +236,11 @@ func logNormalSample(rng *rand.Rand, mu, sigma float64) float64 {
 
 // Stop cancels the run context and blocks until all goroutines exit.
 func (s *Simulator) Stop() {
-	if s.cancel != nil {
-		s.cancel()
+	s.cancelMu.Lock()
+	cancel := s.cancel
+	s.cancelMu.Unlock()
+	if cancel != nil {
+		cancel()
 	}
 	s.wg.Wait()
 }

@@ -204,7 +204,7 @@ and optionally back-pressure or stop on persistent failures. Simplest approach: 
 
 ---
 
-### Task 8: Test Simulator.Run() directly
+### Task 8: Test Simulator.Run() directly  ✅ DONE
 
 **Description:** Replace the duplicated `produceEvents` test helper with tests that
 instantiate a real `Simulator` with a mock sink and call `Run(ctx)` with a
@@ -212,16 +212,16 @@ short-lived context. This tests the actual goroutine management, timer reuse, an
 shutdown logic. Use a `sink.Sink` that records events to a slice for assertion.
 
 **Acceptance criteria:**
-- [ ] `TestFullPipelineDeterministicReplay` uses `Simulator.Run()` not custom loop
-- [ ] `TestFullPipelineStateMachineValidity` uses `Simulator.Run()` not custom loop
-- [ ] A test verifies that cancelling the context stops all goroutines
-- [ ] A test verifies that `Stop()` waits for all goroutines to finish
-- [ ] Timer/delay path is exercised (use a zero-delay config for fast tests)
+- [x] `TestFullPipelineDeterministicReplay` uses `Simulator.Run()` not custom loop
+- [x] `TestFullPipelineStateMachineValidity` uses `Simulator.Run()` not custom loop
+- [x] A test verifies that cancelling the context stops all goroutines
+- [x] A test verifies that `Stop()` waits for all goroutines to finish
+- [x] Timer/delay path is exercised (use a zero-delay config for fast tests)
 
 **Verification:**
-- [ ] New tests pass consistently (not flaky)
-- [ ] Old `produceEvents` helper is removed or kept only for benchmark
-- [ ] Race detector: `go test -race ./internal/simulator/...` passes
+- [x] New tests pass consistently (not flaky)
+- [x] Old `produceEvents` helper is removed or kept only for benchmark
+- [x] Race detector: `go test -race ./internal/simulator/...` passes
 
 **Dependencies:** Task 1 (config validation) makes test config setup cleaner
 

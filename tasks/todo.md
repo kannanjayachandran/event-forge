@@ -91,7 +91,7 @@ producer creation entirely.
 
 ---
 
-### Task 4: Fix failing config test
+### Task 4: Fix failing config test  ✅ DONE
 
 **Description:** `TestLoadDefaultConfig` expects old config values (seed=42, users=20,
 eps=25, 10 products, 15 queries) but the config file was updated (users=100, eps=200,
@@ -99,13 +99,13 @@ eps=25, 10 products, 15 queries) but the config file was updated (users=100, eps
 extracting test-specific configs rather than loading the production file.
 
 **Acceptance criteria:**
-- [ ] `TestLoadDefaultConfig` passes against the current `configs/config.yaml`
-- [ ] Test values match actual config values
-- [ ] Tests are not brittle to config changes (consider using inline test configs)
+- [x] `TestLoadDefaultConfig` passes against the current `configs/config.yaml`
+- [x] Test values match actual config values
+- [x] Tests are not brittle to config changes (consider using inline test configs)
 
 **Verification:**
-- [ ] `go test ./internal/config/...` passes
-- [ ] Full `go test ./...` passes
+- [x] `go test ./internal/config/...` passes
+- [x] Full `go test ./...` passes
 
 **Dependencies:** None (safe to do early)
 

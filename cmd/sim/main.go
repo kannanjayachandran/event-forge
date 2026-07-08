@@ -72,23 +72,27 @@ func run(cfgFile string, verbose bool) error {
 				return fmt.Errorf("file sink: %w", err)
 			}
 			sinks = append(sinks, fs)
+		case "kafka":
 		default:
 			logger.Warn("unknown sink type, skipping", zap.String("sink", s))
 		}
 	}
 
-	prod := producer.New(
-		cfg.Kafka.Brokers,
-		cfg.Kafka.Topic,
-		cfg.Kafka.BatchSize,
-		cfg.Kafka.BatchTimeout,
-		cfg.Kafka.Compression,
-		logger,
-	)
-	defer prod.Close()
+	var prod *producer.Producer
+	if cfg.UseKafka() {
+		prod = producer.New(
+			cfg.Kafka.Brokers,
+			cfg.Kafka.Topic,
+			cfg.Kafka.BatchSize,
+			cfg.Kafka.BatchTimeout,
+			cfg.Kafka.Compression,
+			logger,
+		)
+		defer prod.Close()
 
-	if err := initTopic(cfg.Kafka.Brokers, cfg.Kafka.Topic, logger); err != nil {
-		return fmt.Errorf("init topic: %w", err)
+		if err := initTopic(cfg.Kafka.Brokers, cfg.Kafka.Topic, logger); err != nil {
+			return fmt.Errorf("init topic: %w", err)
+		}
 	}
 
 	sim, err := simulator.New(cfg, prod, sinks, logger)
@@ -119,8 +123,7 @@ func run(cfgFile string, verbose bool) error {
 		zap.Int("concurrent_users", cfg.Simulator.ConcurrentUsers),
 		zap.Float64("events_per_second", cfg.Simulator.EventsPerSecond),
 		zap.Int64("seed", cfg.Simulator.Seed),
-		zap.String("topic", cfg.Kafka.Topic),
-		zap.Strings("brokers", cfg.Kafka.Brokers),
+		zap.Bool("kafka_enabled", cfg.UseKafka()),
 	)
 
 	return sim.Run(ctx)

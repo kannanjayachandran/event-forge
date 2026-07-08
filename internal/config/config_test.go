@@ -82,8 +82,32 @@ func TestValidateValidConfig(t *testing.T) {
 	assert.NoError(t, cfg.Validate())
 }
 
+func TestUseKafkaTrue(t *testing.T) {
+	cfg := validConfig()
+	cfg.Simulator.Sinks = []string{"stdout", "kafka"}
+	assert.True(t, cfg.UseKafka())
+}
+
+func TestUseKafkaFalse(t *testing.T) {
+	cfg := validConfig()
+	cfg.Simulator.Sinks = []string{"stdout", "file"}
+	assert.False(t, cfg.UseKafka())
+}
+
+func TestValidateConfigWithoutKafkaSkipsKafkaValidation(t *testing.T) {
+	cfg := validConfig()
+	cfg.Simulator.Sinks = []string{"stdout", "file"}
+	cfg.Kafka.Brokers = nil
+	cfg.Kafka.Topic = ""
+	cfg.Kafka.BatchSize = -1
+	cfg.Kafka.BatchTimeout = -1
+	cfg.Kafka.Compression = "invalid"
+	assert.NoError(t, cfg.Validate())
+}
+
 func TestValidateEmptyBrokers(t *testing.T) {
 	cfg := validConfig()
+	cfg.Simulator.Sinks = []string{"stdout", "kafka"}
 	cfg.Kafka.Brokers = nil
 	err := cfg.Validate()
 	require.Error(t, err)
@@ -92,6 +116,7 @@ func TestValidateEmptyBrokers(t *testing.T) {
 
 func TestValidateEmptyTopic(t *testing.T) {
 	cfg := validConfig()
+	cfg.Simulator.Sinks = []string{"stdout", "kafka"}
 	cfg.Kafka.Topic = ""
 	err := cfg.Validate()
 	require.Error(t, err)
@@ -100,6 +125,7 @@ func TestValidateEmptyTopic(t *testing.T) {
 
 func TestValidateNegativeBatchSize(t *testing.T) {
 	cfg := validConfig()
+	cfg.Simulator.Sinks = []string{"stdout", "kafka"}
 	cfg.Kafka.BatchSize = -1
 	err := cfg.Validate()
 	require.Error(t, err)
@@ -108,6 +134,7 @@ func TestValidateNegativeBatchSize(t *testing.T) {
 
 func TestValidateNegativeBatchTimeout(t *testing.T) {
 	cfg := validConfig()
+	cfg.Simulator.Sinks = []string{"stdout", "kafka"}
 	cfg.Kafka.BatchTimeout = -1
 	err := cfg.Validate()
 	require.Error(t, err)
@@ -116,6 +143,7 @@ func TestValidateNegativeBatchTimeout(t *testing.T) {
 
 func TestValidateInvalidCompression(t *testing.T) {
 	cfg := validConfig()
+	cfg.Simulator.Sinks = []string{"stdout", "kafka"}
 	cfg.Kafka.Compression = "rar"
 	err := cfg.Validate()
 	require.Error(t, err)
@@ -124,6 +152,7 @@ func TestValidateInvalidCompression(t *testing.T) {
 
 func TestValidateEmptyCompressionIsValid(t *testing.T) {
 	cfg := validConfig()
+	cfg.Simulator.Sinks = []string{"stdout", "kafka"}
 	cfg.Kafka.Compression = ""
 	assert.NoError(t, cfg.Validate())
 }
@@ -131,9 +160,26 @@ func TestValidateEmptyCompressionIsValid(t *testing.T) {
 func TestValidateValidCompressionTypes(t *testing.T) {
 	for _, c := range []string{"snappy", "gzip", "lz4", "zstd"} {
 		cfg := validConfig()
+		cfg.Simulator.Sinks = []string{"stdout", "kafka"}
 		cfg.Kafka.Compression = c
 		assert.NoError(t, cfg.Validate(), "compression %q should be valid", c)
 	}
+}
+
+func TestValidateUnknownSink(t *testing.T) {
+	cfg := validConfig()
+	cfg.Simulator.Sinks = []string{"stdout", "elasticsearch"}
+	err := cfg.Validate()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "simulator.sinks")
+}
+
+func TestValidateDuplicateSink(t *testing.T) {
+	cfg := validConfig()
+	cfg.Simulator.Sinks = []string{"stdout", "stdout"}
+	err := cfg.Validate()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "duplicate")
 }
 
 func TestValidateConcurrentUsersZero(t *testing.T) {
@@ -279,6 +325,7 @@ func TestValidateTransitionProbabilitiesSumExceedsOne(t *testing.T) {
 
 func TestValidateReturnsMultipleErrors(t *testing.T) {
 	cfg := validConfig()
+	cfg.Simulator.Sinks = []string{"stdout", "kafka"}
 	cfg.Kafka.Brokers = nil
 	cfg.Simulator.ConcurrentUsers = 0
 	cfg.Products = nil

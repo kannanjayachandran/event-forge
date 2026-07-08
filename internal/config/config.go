@@ -95,6 +95,7 @@ func Load(path string) (*Config, error) {
 func (c *Config) Validate() error {
 	var errs []error
 
+	errs = append(errs, c.validateSinks()...)
 	errs = append(errs, c.validateKafka()...)
 	errs = append(errs, c.validateSimulator()...)
 	errs = append(errs, c.validateStateMachine()...)
@@ -104,8 +105,41 @@ func (c *Config) Validate() error {
 	return errors.Join(errs...)
 }
 
+// UseKafka returns true when at least one configured sink is "kafka".
+func (c *Config) UseKafka() bool {
+	for _, s := range c.Simulator.Sinks {
+		if s == "kafka" {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *Config) validateSinks() []error {
+	var errs []error
+	seen := make(map[string]bool, len(c.Simulator.Sinks))
+	for _, s := range c.Simulator.Sinks {
+		if seen[s] {
+			errs = append(errs, fmt.Errorf("simulator.sinks: duplicate sink %q", s))
+		}
+		seen[s] = true
+		switch s {
+		case "stdout", "file", "kafka":
+		default:
+			errs = append(errs, fmt.Errorf(
+				"simulator.sinks: unsupported sink %q; must be one of: stdout, file, kafka", s,
+			))
+		}
+	}
+	return errs
+}
+
 func (c *Config) validateKafka() []error {
 	var errs []error
+
+	if !c.UseKafka() {
+		return nil
+	}
 
 	if len(c.Kafka.Brokers) == 0 {
 		errs = append(errs, fmt.Errorf("kafka.brokers: must specify at least one broker"))

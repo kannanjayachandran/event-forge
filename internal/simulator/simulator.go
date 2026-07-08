@@ -133,14 +133,14 @@ func (s *Simulator) runSession(ctx context.Context) {
 				s.logger.Error("sink write failed", zap.Error(err))
 			}
 		}
-		// Bound the Kafka produce call. On timeout or error we count the drop
-		// and keep the session alive {Frozen simulator is worse than lost events}
-		sendCtx, cancelSend := context.WithTimeout(ctx, sendTimeout)
-		if err := s.producer.Send(sendCtx, evt); err != nil {
-			s.logger.Error("producer send failed", zap.Error(err))
-			metrics.EventsDropped.WithLabelValues(string(currentState)).Inc()
+		if s.producer != nil {
+			sendCtx, cancelSend := context.WithTimeout(ctx, sendTimeout)
+			if err := s.producer.Send(sendCtx, evt); err != nil {
+				s.logger.Error("producer send failed", zap.Error(err))
+				metrics.EventsDropped.WithLabelValues(string(currentState)).Inc()
+			}
+			cancelSend()
 		}
-		cancelSend()
 
 		metrics.EventsProduced.WithLabelValues(string(currentState)).Inc()
 		metrics.EventDuration.WithLabelValues(string(currentState)).Observe(float64(time.Since(start).Seconds()))

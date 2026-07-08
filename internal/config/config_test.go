@@ -13,10 +13,13 @@ func TestLoadDefaultConfig(t *testing.T) {
 	require.NotNil(t, cfg)
 
 	assert.Equal(t, int64(42), cfg.Simulator.Seed)
-	assert.Equal(t, 10, cfg.Simulator.ConcurrentUsers)
-	assert.Equal(t, 5.0, cfg.Simulator.EventsPerSecond)
+	assert.Equal(t, 20, cfg.Simulator.ConcurrentUsers)
+	assert.Equal(t, 25.0, cfg.Simulator.EventsPerSecond)
 	assert.Equal(t, ":8080", cfg.Simulator.MetricsAddr)
 	assert.ElementsMatch(t, []string{"stdout", "file"}, cfg.Simulator.Sinks)
+
+	assert.Equal(t, "exponential", cfg.Simulator.Timing.Distribution)
+	assert.Equal(t, 0.04, cfg.Simulator.Timing.Alpha)
 
 	assert.Len(t, cfg.Kafka.Brokers, 1)
 	assert.Equal(t, "ecommerce-events", cfg.Kafka.Topic)

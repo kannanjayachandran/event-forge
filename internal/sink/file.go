@@ -1,6 +1,7 @@
 package sink
 
 import (
+	"bufio"
 	"encoding/json"
 	"os"
 	"sync"
@@ -11,6 +12,7 @@ import (
 type FileSink struct {
 	mu   sync.Mutex
 	file *os.File
+	bw   *bufio.Writer
 }
 
 func NewFileSink(path string) (*FileSink, error) {
@@ -18,7 +20,7 @@ func NewFileSink(path string) (*FileSink, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &FileSink{file: f}, nil
+	return &FileSink{file: f, bw: bufio.NewWriter(f)}, nil
 }
 
 func (s *FileSink) Write(event model.Event) error {
@@ -29,12 +31,18 @@ func (s *FileSink) Write(event model.Event) error {
 	b = append(b, '\n')
 
 	s.mu.Lock()
-	_, err = s.file.Write(b)
+	_, err = s.bw.Write(b)
 	s.mu.Unlock()
 
 	return err
 }
 
 func (s *FileSink) Close() error {
+	s.mu.Lock()
+	err := s.bw.Flush()
+	s.mu.Unlock()
+	if err != nil {
+		return err
+	}
 	return s.file.Close()
 }

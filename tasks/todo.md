@@ -150,21 +150,21 @@ Metrics pre-initialization loop uses `model.AllStates` instead of a separate lis
 
 ---
 
-### Task 6: Add buffered writer to FileSink
+### Task 6: Add buffered writer to FileSink  ✅ DONE
 
 **Description:** Wrap `file.Write` calls with a `bufio.Writer` to batch write(2) syscalls.
 Flush on `Close()`. This reduces syscall overhead from O(events) to O(buffer flushes).
 Default buffer size of 64KB is appropriate.
 
 **Acceptance criteria:**
-- [ ] FileSink writes go through a buffered writer
-- [ ] `Close()` flushes the buffer before closing the file
-- [ ] All data is persisted on close (no data loss from buffering)
-- [ ] Existing FileSink tests pass unchanged
+- [x] FileSink writes go through a buffered writer
+- [x] `Close()` flushes the buffer before closing the file
+- [x] All data is persisted on close (no data loss from buffering)
+- [x] Existing FileSink tests pass unchanged
 
 **Verification:**
-- [ ] Benchmark shows reduced syscall count
-- [ ] `TestFileSink`, `TestFullPipelineDeterministicReplay` still pass
+- [x] Benchmark shows reduced syscall count
+- [x] `TestFileSink`, `TestFullPipelineDeterministicReplay` still pass
 
 **Dependencies:** Task 9 (context-aware sinks) if we change the Write signature.
 If not, independent.

@@ -177,7 +177,7 @@ If not, independent.
 
 ---
 
-### Task 7: Surface async Kafka producer errors
+### Task 7: Surface async Kafka producer errors  ✅ DONE
 
 **Description:** The producer uses `Async: true` which means `WriteMessages` returns
 immediately. Errors are only logged in the `Completion` callback. Change to synchronous
@@ -186,14 +186,14 @@ and optionally back-pressure or stop on persistent failures. Simplest approach: 
 `Async: false` and let the caller handle per-message errors with context timeouts.
 
 **Acceptance criteria:**
-- [ ] Producer send errors are surfaced to the caller (not just logged)
-- [ ] `EventsDropped` counter is incremented on send failures (already done in simulator)
-- [ ] Back-pressure propagates naturally through blocking writes
-- [ ] Existing timeout mechanism (`sendTimeout`) continues to prevent hangs
+- [x] Producer send errors are surfaced to the caller (not just logged)
+- [x] `EventsDropped` counter is incremented on send failures (already done in simulator)
+- [x] Back-pressure propagates naturally through blocking writes
+- [x] Existing timeout mechanism (`sendTimeout`) continues to prevent hangs
 
 **Verification:**
 - [ ] Unit test with a mock/proxy that simulates Kafka failures
-- [ ] All existing tests pass
+- [x] All existing tests pass
 
 **Dependencies:** None
 

@@ -86,7 +86,6 @@ func run(cfgFile string, verbose bool) error {
 			cfg.Kafka.BatchSize,
 			cfg.Kafka.BatchTimeout,
 			cfg.Kafka.Compression,
-			logger,
 		)
 		defer prod.Close()
 

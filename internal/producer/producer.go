@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/segmentio/kafka-go"
-	"go.uber.org/zap"
 
 	"event-sim/internal/metrics"
 	"event-sim/internal/model"
@@ -14,10 +13,9 @@ import (
 
 type Producer struct {
 	writer *kafka.Writer
-	logger *zap.Logger
 }
 
-func New(brokers []string, topic string, batchSize int, batchTimeout time.Duration, compression string, logger *zap.Logger) *Producer {
+func New(brokers []string, topic string, batchSize int, batchTimeout time.Duration, compression string) *Producer {
 	var compress kafka.Compression
 	switch compression {
 	case "snappy":
@@ -37,18 +35,11 @@ func New(brokers []string, topic string, batchSize int, batchTimeout time.Durati
 		BatchSize:    batchSize,
 		BatchTimeout: batchTimeout,
 		Compression:  compress,
-		Async:        true,
+		Async:        false,
 		RequiredAcks: kafka.RequireOne,
-		Completion: func(messages []kafka.Message, err error) {
-			metrics.KafkaBatchesSent.Inc()
-			metrics.KafkaMessagesSent.Add(float64(len(messages)))
-			if err != nil {
-				logger.Error("kafka write error", zap.Error(err))
-			}
-		},
 	}
 
-	return &Producer{writer: w, logger: logger}
+	return &Producer{writer: w}
 }
 
 func (p *Producer) Send(ctx context.Context, event model.Event) error {
@@ -65,7 +56,12 @@ func (p *Producer) Send(ctx context.Context, event model.Event) error {
 		},
 	}
 
-	return p.writer.WriteMessages(ctx, msg)
+	err = p.writer.WriteMessages(ctx, msg)
+	if err == nil {
+		metrics.KafkaBatchesSent.Inc()
+		metrics.KafkaMessagesSent.Inc()
+	}
+	return err
 }
 
 func (p *Producer) Close() error {

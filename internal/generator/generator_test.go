@@ -85,3 +85,57 @@ func TestGeneratorProductSelection(t *testing.T) {
 
 	assert.True(t, len(seen) > 1, "should produce multiple different product views")
 }
+
+func TestGeneratorNoPanicOnEmptyProducts(t *testing.T) {
+	cfg := &config.Config{
+		Products:      nil,
+		SearchQueries: []string{"headphones"},
+	}
+	gen := New(cfg)
+	rng := rand.New(rand.NewSource(42))
+
+	for _, s := range []model.State{model.StateProductView, model.StateAddToCart} {
+		t.Run(string(s), func(t *testing.T) {
+			data := gen.GenerateData(rng, s)
+			require.True(t, len(data) >= 2, "should return valid JSON, got: %s", string(data))
+			require.True(t, data[0] == '{', "should return JSON object for state %s", s)
+		})
+	}
+}
+
+func TestGeneratorNoPanicOnEmptyQueries(t *testing.T) {
+	cfg := &config.Config{
+		Products:      []config.Product{{ID: "p1", Name: "P1", Category: "c", Price: 10}},
+		SearchQueries: nil,
+	}
+	gen := New(cfg)
+	rng := rand.New(rand.NewSource(42))
+
+	data := gen.GenerateData(rng, model.StateSearch)
+	require.True(t, len(data) >= 2, "should return valid JSON, got: %s", string(data))
+	require.True(t, data[0] == '{', "should return JSON object")
+}
+
+func TestGeneratorNoPanicOnEmptyProductsAndQueries(t *testing.T) {
+	cfg := &config.Config{
+		Products:      nil,
+		SearchQueries: nil,
+	}
+	gen := New(cfg)
+	rng := rand.New(rand.NewSource(42))
+
+	states := []model.State{
+		model.StateLanding,
+		model.StateSearch,
+		model.StateProductView,
+		model.StateAddToCart,
+		model.StateCheckout,
+		model.StatePurchase,
+	}
+	for _, s := range states {
+		t.Run(string(s), func(t *testing.T) {
+			data := gen.GenerateData(rng, s)
+			require.True(t, len(data) > 0, "should return data for state %s", s)
+		})
+	}
+}

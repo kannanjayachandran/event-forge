@@ -51,6 +51,9 @@ func (g *Generator) landingData() json.RawMessage {
 }
 
 func (g *Generator) searchData(rng *rand.Rand) json.RawMessage {
+	if len(g.queries) == 0 {
+		return json.RawMessage(`{}`)
+	}
 	q := g.queries[rng.Intn(len(g.queries))]
 	results := rng.Intn(50) + 1
 	data, _ := json.Marshal(map[string]any{
@@ -60,8 +63,18 @@ func (g *Generator) searchData(rng *rand.Rand) json.RawMessage {
 	return data
 }
 
+func (g *Generator) randomProduct(rng *rand.Rand) *config.Product {
+	if len(g.products) == 0 {
+		return nil
+	}
+	return &g.products[rng.Intn(len(g.products))]
+}
+
 func (g *Generator) productViewData(rng *rand.Rand) json.RawMessage {
-	p := g.products[rng.Intn(len(g.products))]
+	p := g.randomProduct(rng)
+	if p == nil {
+		return json.RawMessage(`{}`)
+	}
 	data, _ := json.Marshal(map[string]any{
 		"product_id": p.ID,
 		"name":       p.Name,
@@ -72,7 +85,10 @@ func (g *Generator) productViewData(rng *rand.Rand) json.RawMessage {
 }
 
 func (g *Generator) addToCartData(rng *rand.Rand) json.RawMessage {
-	p := g.products[rng.Intn(len(g.products))]
+	p := g.randomProduct(rng)
+	if p == nil {
+		return json.RawMessage(`{}`)
+	}
 	qty := rng.Intn(3) + 1
 	data, _ := json.Marshal(map[string]any{
 		"product_id": p.ID,

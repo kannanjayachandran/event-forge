@@ -1,17 +1,15 @@
 package metrics
 
 import (
+	"event-sim/internal/model"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
-// eventTypes lists every known simulation state so that counter-vec metrics
-// pre-initialise at zero and always appear in the /metrics endpoint.
-var eventTypes = []string{"landing", "search", "product_view", "add_to_cart", "checkout", "purchase"}
-
 func init() {
-	for _, s := range eventTypes {
-		EventsDropped.WithLabelValues(s).Add(0)
+	for _, s := range model.AllStates {
+		EventsDropped.WithLabelValues(string(s)).Add(0)
 	}
 }
 

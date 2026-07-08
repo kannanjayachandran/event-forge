@@ -16,6 +16,8 @@ const (
 	StatePurchase    State = "purchase"
 )
 
+var AllStates = []State{StateLanding, StateSearch, StateProductView, StateAddToCart, StateCheckout, StatePurchase}
+
 var TerminalStates = map[State]bool{
 	StatePurchase: true,
 }

@@ -123,7 +123,7 @@ extracting test-specific configs rather than loading the production file.
 
 ## Phase 1: Correctness & Observability (High)
 
-### Task 5: De-duplicate state list
+### Task 5: De-duplicate state list  ✅ DONE
 
 **Description:** Remove the hardcoded `eventTypes` slice from `internal/metrics/metrics.go`
 and replace with a single source of truth in `internal/model/model.go`. Add
@@ -131,14 +131,14 @@ and replace with a single source of truth in `internal/model/model.go`. Add
 Metrics pre-initialization loop uses `model.AllStates` instead of a separate list.
 
 **Acceptance criteria:**
-- [ ] `model.AllStates` contains all defined states
-- [ ] `metrics.go` references `model.AllStates` instead of its own list
-- [ ] All state-dependent labels are pre-initialized via the shared list
-- [ ] Adding a new state constant to `model.go` automatically picks it up in metrics
+- [x] `model.AllStates` contains all defined states
+- [x] `metrics.go` references `model.AllStates` instead of its own list
+- [x] All state-dependent labels are pre-initialized via the shared list
+- [x] Adding a new state constant to `model.go` automatically picks it up in metrics
 
 **Verification:**
-- [ ] `go test ./...` passes
-- [ ] Prometheus `/metrics` endpoint still shows all event types
+- [x] `go test ./...` passes
+- [x] Prometheus `/metrics` endpoint still shows all event types
 
 **Dependencies:** None (pure refactor)
 

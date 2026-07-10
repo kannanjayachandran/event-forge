@@ -1,6 +1,7 @@
 package sink
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -30,7 +31,7 @@ func TestFileSink(t *testing.T) {
 		Data:      json.RawMessage(`{"page":"/"}`),
 	}
 
-	err = s.Write(evt)
+	err = s.Write(context.Background(), evt)
 	require.NoError(t, err)
 
 	err = s.Close()
@@ -59,7 +60,7 @@ func TestStdoutSink(t *testing.T) {
 		Data:      json.RawMessage(`{}`),
 	}
 
-	err := s.Write(evt)
+	err := s.Write(context.Background(), evt)
 	assert.NoError(t, err)
 
 	err = s.Close()

@@ -295,7 +295,7 @@ func BenchmarkThroughput(b *testing.B) {
 			EventType: state,
 			Data:      gen.GenerateData(rng, state),
 		}
-		fs.Write(evt)
+		fs.Write(context.Background(), evt)
 
 		if model.TerminalStates[state] {
 			sessionID = deterministicUUID(rng)
@@ -313,5 +313,3 @@ func BenchmarkThroughput(b *testing.B) {
 		state = next
 	}
 }
-
-

@@ -1,13 +1,14 @@
 package sink
 
 import (
+	"context"
 	"sync"
 
 	"event-sim/internal/model"
 )
 
 type Sink interface {
-	Write(event model.Event) error
+	Write(ctx context.Context, event model.Event) error
 	Close() error
 }
 
@@ -16,7 +17,12 @@ type SliceSink struct {
 	Events []model.Event
 }
 
-func (s *SliceSink) Write(event model.Event) error {
+func (s *SliceSink) Write(ctx context.Context, event model.Event) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
 	s.mu.Lock()
 	s.Events = append(s.Events, event)
 	s.mu.Unlock()

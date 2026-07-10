@@ -138,7 +138,7 @@ func (s *Simulator) runSession(ctx context.Context) {
 		}
 		// edited ...
 		for _, sk := range s.sinks {
-			if err := sk.Write(evt); err != nil {
+			if err := sk.Write(ctx, evt); err != nil {
 				s.logger.Error("sink write failed", zap.Error(err))
 			}
 		}

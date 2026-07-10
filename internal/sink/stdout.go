@@ -1,6 +1,7 @@
 package sink
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"sync"
@@ -16,7 +17,12 @@ func NewStdoutSink() *StdoutSink {
 	return &StdoutSink{}
 }
 
-func (s *StdoutSink) Write(event model.Event) error {
+func (s *StdoutSink) Write(ctx context.Context, event model.Event) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
 	b, err := json.Marshal(event)
 	if err != nil {
 		return err

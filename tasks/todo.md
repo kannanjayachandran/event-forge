@@ -233,7 +233,7 @@ shutdown logic. Use a `sink.Sink` that records events to a slice for assertion.
 
 ---
 
-### Task 9: Add context parameter to Sink interface
+### Task 9: Add context parameter to Sink interface  ✅ DONE
 
 **Description:** Add `ctx context.Context` as the first parameter of `sink.Sink.Write()`.
 This allows sinks to respect cancellation during shutdown. Current sink implementations
@@ -241,17 +241,17 @@ This allows sinks to respect cancellation during shutdown. Current sink implemen
 `ctx.Done()` before long operations. Update all call sites in simulator.go.
 
 **Acceptance criteria:**
-- [ ] `Sink.Write(ctx, event)` signature compiles
-- [ ] FileSink checks context before/during write
-- [ ] StdoutSink checks context before/during write
-- [ ] Simulator passes cancellation context to sink writes
-- [ ] Shutdown is responsive even if a sink is blocked
+- [x] `Sink.Write(ctx, event)` signature compiles
+- [x] FileSink checks context before/during write
+- [x] StdoutSink checks context before/during write
+- [x] Simulator passes cancellation context to sink writes
+- [x] Shutdown is responsive even if a sink is blocked
 
 **Verification:**
-- [ ] `go build ./...` succeeds
-- [ ] All sink tests updated and pass
-- [ ] Simulator tests pass
-- [ ] Manual: simulator exits promptly on SIGINT with slow sink
+- [x] `go build ./...` succeeds
+- [x] All sink tests updated and pass
+- [x] Simulator tests pass
+- [x] Manual: simulator exits promptly on SIGINT with slow sink
 
 **Dependencies:** None (but T6 and T17 depend on this)
 

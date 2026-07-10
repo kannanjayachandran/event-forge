@@ -2,6 +2,7 @@ package sink
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"os"
 	"sync"
@@ -23,7 +24,12 @@ func NewFileSink(path string) (*FileSink, error) {
 	return &FileSink{file: f, bw: bufio.NewWriter(f)}, nil
 }
 
-func (s *FileSink) Write(event model.Event) error {
+func (s *FileSink) Write(ctx context.Context, event model.Event) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
 	b, err := json.Marshal(event)
 	if err != nil {
 		return err

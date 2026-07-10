@@ -192,7 +192,7 @@ and optionally back-pressure or stop on persistent failures. Simplest approach: 
 - [x] Existing timeout mechanism (`sendTimeout`) continues to prevent hangs
 
 **Verification:**
-- [ ] Unit test with a mock/proxy that simulates Kafka failures
+- [~] Unit test with a mock/proxy that simulates Kafka failures (deferred — producer is tested indirectly via integration tests)
 - [x] All existing tests pass
 
 **Dependencies:** None
@@ -266,7 +266,7 @@ This allows sinks to respect cancellation during shutdown. Current sink implemen
 
 ---
 
-### Task 10: Add integration tests with testcontainers-go
+### Task 10: Add integration tests with testcontainers-go  ✅ DONE
 
 **Description:** Add integration tests that spin up a Redpanda container, produce events
 via the simulator, and verify they arrive. Use `//go:build integration` build tags so
@@ -274,16 +274,16 @@ they run separately from unit tests. Test: (a) basic produce and consume,
 (b) deterministic replay produces identical events, (c) multiple sink modes.
 
 **Acceptance criteria:**
-- [ ] Integration test starts a Redpanda container and waits for it to be healthy
-- [ ] Test produces N events via the simulator and consumes them back
-- [ ] Test verifies event count matches
-- [ ] Test verifies event schema is valid
-- [ ] Tests are skipped during normal `go test ./...` (build tags)
-- [ ] Container is cleaned up on test completion
+- [x] Integration test starts a Redpanda container and waits for it to be healthy
+- [x] Test produces N events via the simulator and consumes them back
+- [x] Test verifies event count matches
+- [x] Test verifies event schema is valid
+- [x] Tests are skipped during normal `go test ./...` (build tags)
+- [x] Container is cleaned up on test completion
 
 **Verification:**
-- [ ] `go test --tags=integration -v ./internal/simulator/...` passes
-- [ ] No rouge containers left after test run
+- [x] `go test --tags=integration -v ./internal/simulator/...` passes
+- [x] No rogue containers left after test run
 
 **Dependencies:** Task 3 (Kafka-optional startup), Task 1 (config validation)
 
